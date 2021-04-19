@@ -57,9 +57,21 @@ function parseHTML(data) {
         // console.log(team);
 
         let teamName = team.split("INNINGS");
-        // console.log(teamName[0]);
+        console.log(teamName[0]);
 
-        
+        teamName = teamName[0];
+
+        let player = innElem.find(".table.batsman tbody tr");
+        // console.log(player.length);
+
+        for(let j=0;j<player.length;j++) {
+            let tds = ch(player[j]).find("td");
+            // console.log(ch(tds).text());
+            if(tds.length > 1) {
+                console.log("Valid row", ch(player[j]).text());
+            }
+        }
+        console.log("``````````````````````````````");
     }
     // fs.writeFileSync("tables.html", whole);
 }
