@@ -8,6 +8,8 @@ const fs = require("fs");
 
 let path = require("path"); // internal node module
 
+let xlsx = require("xlsx"); // io related to excel files
+
 let url = "https://www.espncricinfo.com/series/ipl-2021-1249214/delhi-capitals-vs-punjab-kings-11th-match-1254068/full-scorecard";
 console.log("Before");
 
@@ -87,12 +89,12 @@ function parseHTML(data) {
             let isAllowed = ch(cols[0]).hasClass("batsman-cell");
             if(isAllowed) { // only players here
                 // console.log(ch(playerRows[j]).text());
-                let playerName = ch(cols[0]).text();
-                let runs = ch(cols[2]).text();
-                let balls = ch(cols[3]).text();
-                let fours = ch(cols[5]).text();
-                let sixes = ch(cols[6]).text();
-                let sr = ch(cols[7]).text();
+                let playerName = ch(cols[0]).text().trim();
+                let runs = ch(cols[2]).text().trim();
+                let balls = ch(cols[3]).text().trim();
+                let fours = ch(cols[5]).text().trim();
+                let sixes = ch(cols[6]).text().trim();
+                let sr = ch(cols[7]).text().trim();
                 // console.log();
 
                 // adds the data in required folder -> then required file 
@@ -112,35 +114,81 @@ function processPlayer(teamName, playerName, runs, balls, fours, sixes, sr) {
         balls: balls,
         fours: fours,
         sixes: sixes,
-        sr: sr
+        sr: sr,
+        teamName: teamName
     };
     
     // checks -> folder exists ? (file exists ? data append : create file and add data) : create folder, file then add data
 
     let dirExist = checkExistence(teamName);
     if(dirExist) {
-
     } else {
         createFolder(teamName);
     }
 
-    let playerFileName = path.join(__dirname, teamName, playerName + ".json");
-    let fileExist = checkFile(playerFileName);
+    // file check
+    // let playerFileName = path.join(__dirname, teamName, playerName + ".json");
+
+    let playerFileName = path.join(__dirname, teamName, playerName + ".xlsx");
+    let fileExist = checkExistence(playerFileName);
+    let playerEntries = [];
     if(fileExist) {
-        // append data
+        // append data, site: nodejs.dev
+
+        // let binarydata = fs.readFileSync(playerFileName); // ye file file system se read kari hai, came into RAM
+        // parse and convert into JSON format
+        // playerEntries = JSON.parse(binarydata);
+        // playerEntries.push(playerObject);
+
+        // fs.writeFileSync(playerFileName, JSON.stringify(playerEntries));
+
+        // after adding xlsx module
+
+        let JSONdata = excelReader(playerFileName, playerName);
+        playerEntries = JSONdata;
+        playerEntries.push(playerObject);
+        excelWriter(playerFileName, playerEntries, playerName);
     } else {
-        
+        // playerEntries.push(playerObject);
+        // file exists ? then overrides the data : create file
+        // fs.writeFileSync(playerFileName, JSON.stringify(playerEntries));
+
+        // after adding xlsx module
+        playerEntries.push(playerObject);
+        excelWriter(playerFileName, playerEntries, playerName);
     }
 };
 
 function checkExistence(teamName) {
-
+    return fs.existsSync(teamName);
 };
 
 function createFolder(teamName) {
-
+    return fs.mkdirSync(teamName);
 };
 
-function checkFile(playerFileName) {
+function excelReader(filePath, name) {
+    if(!fs.readFileSync(filePath)) {
+        return null;
+    } else {
+        let wt = xlsx.readFile(filePath);
 
-};
+        // msd ki workbook -> msd ki worksheet
+        // get data from workbook
+        let excelData = wt.Sheets[name];
+
+        // convert excel format to JSON -> array of objs
+        let ans = xlsx.utils.sheet_to_json(excelData);
+        // console.log(ans);
+        return ans;
+    }
+}
+
+function excelWriter(filePath, json, name) {
+    let newWB = xlsx.utils.book_new();
+    // console.log(json);
+    let newWS = xlsx.utils.json_to_sheet(json);
+    // msd.xlsx -> msd sheet
+    xlsx.utils.book_append_sheet(newWB, newWS, name); // workbook name as param
+    xlsx.writeFile(newWB, filePath);
+}
