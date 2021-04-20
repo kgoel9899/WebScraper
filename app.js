@@ -10,14 +10,19 @@ let path = require("path"); // internal node module
 
 let xlsx = require("xlsx"); // io related to excel files
 
-let url = "https://www.espncricinfo.com/series/ipl-2021-1249214/delhi-capitals-vs-punjab-kings-11th-match-1254068/full-scorecard";
+// let url = "https://www.espncricinfo.com/series/ipl-2021-1249214/delhi-capitals-vs-punjab-kings-11th-match-1254068/full-scorecard";
 console.log("Before");
 
 // req -> to make request to server and to get HTML/response
 // cb = callback
-req(url, cb);
+
+// req(url, cb);
 console.log("After");
 console.log("Request sent");
+
+function processMatch(url) {
+    req(url, cb);
+}
 
 function cb(err, res, data) {
     // resource not found
@@ -97,6 +102,7 @@ function parseHTML(data) {
                 let sr = ch(cols[7]).text().trim();
                 // console.log();
 
+                console.log(teamName, playerName, runs, balls, fours, sixes, sr);
                 // adds the data in required folder -> then required file 
                 processPlayer(teamName, playerName, runs, balls, fours, sixes, sr);
             }
@@ -192,3 +198,7 @@ function excelWriter(filePath, json, name) {
     xlsx.utils.book_append_sheet(newWB, newWS, name); // workbook name as param
     xlsx.writeFile(newWB, filePath);
 }
+
+module.exports = {
+    processMatch: processMatch
+};
